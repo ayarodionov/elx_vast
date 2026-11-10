@@ -27,7 +27,8 @@ defmodule ElxVast.Types do
     cond do
       String.ends_with?(offset_string, "%") ->
         # Extract percentage value and validate
-        percentage_str = String.trim_trailing(offset_string, "%")
+        # Drop exactly one trailing "%": trim_trailing would also accept "4%%"
+        percentage_str = binary_part(offset_string, 0, byte_size(offset_string) - 1)
         case Float.parse(percentage_str) do
           {percentage, ""} when percentage >= 0 and percentage <= 100 -> true
           _ ->
@@ -110,8 +111,10 @@ defmodule ElxVast.Types do
   Validates MIME type format.
   """
   def valid_mime_type?(mime_type) when is_binary(mime_type) do
-    # Basic MIME type pattern: type/subtype
-    mime_pattern = ~r/^[a-zA-Z][a-zA-Z0-9!#$&\-\^]*\/[a-zA-Z0-9!#$&\-\^]+$/
+    # Basic MIME type pattern: type/subtype. Names may contain the RFC 6838
+    # restricted-name characters, including "." "+" and "_" (for example
+    # "application/vnd.apple.mpegurl" and "image/svg+xml").
+    mime_pattern = ~r/^[a-zA-Z][a-zA-Z0-9!#$&\-\^_.+]*\/[a-zA-Z0-9!#$&\-\^_.+]+$/
     Regex.match?(mime_pattern, mime_type)
   end
 
@@ -132,14 +135,14 @@ defmodule ElxVast.Types do
   """
   def valid_x_position?(position) when position in ["left", "right"], do: true
   def valid_x_position?(position) when is_binary(position) do
-    position_pattern = ~r/^[0-9]*$/
+    position_pattern = ~r/^[0-9]+$/
     Regex.match?(position_pattern, position)
   end
   def valid_x_position?(_), do: false
 
   def valid_y_position?(position) when position in ["top", "bottom"], do: true
   def valid_y_position?(position) when is_binary(position) do
-    position_pattern = ~r/^[0-9]*$/
+    position_pattern = ~r/^[0-9]+$/
     Regex.match?(position_pattern, position)
   end
   def valid_y_position?(_), do: false
