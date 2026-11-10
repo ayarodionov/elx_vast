@@ -252,4 +252,31 @@ defmodule ElxVast.TypesTest do
       refute Types.valid_verification_event?(nil)
     end
   end
+
+  describe "regressions found by a contract-first review" do
+    test "MIME types may contain ., + and _ (RFC 6838), e.g. HLS and SVG" do
+      assert Types.valid_mime_type?("application/vnd.apple.mpegurl")
+      assert Types.valid_mime_type?("application/x-mpegURL")
+      assert Types.valid_mime_type?("image/svg+xml")
+      assert Types.valid_mime_type?("application/vnd.ms-asf")
+      assert Types.valid_mime_type?("video/mp4")
+      refute Types.valid_mime_type?("video")
+      refute Types.valid_mime_type?("/mp4")
+      refute Types.valid_mime_type?("video/")
+      refute Types.valid_mime_type?("video mp4")
+    end
+
+    test "an empty string is not a position" do
+      refute Types.valid_x_position?("")
+      refute Types.valid_y_position?("")
+      assert Types.valid_x_position?("0")
+      assert Types.valid_y_position?("120")
+    end
+
+    test "repeated percent signs are not a percentage offset" do
+      refute Types.valid_offset?("4%%")
+      refute Types.valid_offset?("50%%")
+      assert Types.valid_offset?("50%")
+    end
+  end
 end
